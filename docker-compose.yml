@@ -1,0 +1,15 @@
+services:
+  web:
+    build: .
+    image: design-tinder:dev
+    container_name: design-tinder
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped

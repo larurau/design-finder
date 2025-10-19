@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{% block title %}Design Tinder{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <link rel="icon" href="{{ url_for('static', path='favicon.svg') }}" />
+</head>
+<body class="min-h-screen bg-zinc-950 text-zinc-100 antialiased">
+  <header class="border-b border-zinc-800">
+    <div class="max-w-4xl mx-auto px-4 py-4 flex items-center gap-3">
+      <img src="{{ url_for('static', path='favicon.svg') }}" class="h-6 w-6" alt="Logo" />
+      <h1 class="text-lg font-semibold">Design Tinder</h1>
+      <span class="ml-auto text-xs text-zinc-400">skeleton</span>
+    </div>
+  </header>
+  <main class="max-w-4xl mx-auto px-4 py-8">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="max-w-4xl mx-auto px-4 py-6 border-t border-zinc-800 text-xs text-zinc-500">
+    Built with FastAPI · Jinja2 · HTMX · Tailwind
+  </footer>
+</body>
+</html>
