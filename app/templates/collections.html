@@ -1,17 +1,32 @@
 {% extends "base.html" %}
 {% block title %}Design Tinder · Collections{% endblock %}
 {% block content %}
-  <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-    {% for col in collections %}
-      <a href="/collection/{{ col.name }}" class="block rounded-xl overflow-hidden border border-zinc-800 bg-zinc-900 hover:border-zinc-700">
-        <div class="aspect-square grid grid-cols-2 grid-rows-2 gap-[2px] bg-zinc-800">
-          {% set i1 = col.first3[0] if col.first3|length > 0 else None %}
-          {% set i2 = col.first3[1] if col.first3|length > 1 else None %}
-          {% set i3 = col.first3[2] if col.first3|length > 2 else None %}
 
-          <div class="bg-zinc-900">{% if i1 %}<img src="/thumb/{{ col.name }}/{{ i1 }}" alt="" class="w-full h-full object-cover" loading="lazy"/>{% endif %}</div>
-          <div class="bg-zinc-900">{% if i2 %}<img src="/thumb/{{ col.name }}/{{ i2 }}" alt="" class="w-full h-full object-cover" loading="lazy"/>{% endif %}</div>
-          <div class="bg-zinc-900">{% if i3 %}<img src="/thumb/{{ col.name }}/{{ i3 }}" alt="" class="w-full h-full object-cover" loading="lazy"/>{% endif %}</div>
+{% if refinements and refinements|length > 0 %}
+  <div class="mb-6">
+    <h2 class="text-sm uppercase tracking-wide text-zinc-500 mb-2">Active refinements</h2>
+    <div class="flex flex-wrap gap-2">
+      {% for r in refinements %}
+        <a href="/refine/{{ r.id }}" class="px-3 py-1.5 rounded-md bg-zinc-900 border border-zinc-800 text-sm hover:border-zinc-700">
+          {{ r.name }}
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+{% endif %}
+
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+  {% for col in collections %}
+    <div class="group relative rounded-xl overflow-hidden border border-zinc-800 bg-zinc-900 hover:border-zinc-700">
+      <a href="{{ col.href }}" class="block">
+        <div class="aspect-square grid grid-cols-2 grid-rows-2 gap-[2px] bg-zinc-800">
+          {% set t1 = col.first3[0] if col.first3|length > 0 else None %}
+          {% set t2 = col.first3[1] if col.first3|length > 1 else None %}
+          {% set t3 = col.first3[2] if col.first3|length > 2 else None %}
+
+          <div class="bg-zinc-900">{% if t1 %}<img src="{{ t1 }}" alt="" class="w-full h-full object-cover" loading="lazy"/>{% endif %}</div>
+          <div class="bg-zinc-900">{% if t2 %}<img src="{{ t2 }}" alt="" class="w-full h-full object-cover" loading="lazy"/>{% endif %}</div>
+          <div class="bg-zinc-900">{% if t3 %}<img src="{{ t3 }}" alt="" class="w-full h-full object-cover" loading="lazy"/>{% endif %}</div>
 
           {% if col.extra > 0 %}
             <div class="bg-zinc-900 flex items-center justify-center">
@@ -22,10 +37,26 @@
           {% endif %}
         </div>
       </a>
-    {% endfor %}
 
-    {% if not collections %}
-      <div class="col-span-full text-sm text-zinc-400">No collections found. Create subfolders in <code>photos/</code> and add images.</div>
-    {% endif %}
-  </div>
+      <div class="pointer-events-none absolute inset-x-0 top-0 z-10 opacity-0 group-hover:opacity-100 transition
+                  bg-black/60 text-xs px-2 py-1">
+        <span class="block truncate">{{ col.name }}</span>
+      </div>
+
+      {% if col.refine_href %}
+        <a href="{{ col.refine_href }}"
+           class="absolute inset-x-0 bottom-0 z-10 opacity-0 group-hover:opacity-100 transition
+                  text-xs py-2 text-center font-medium
+                  bg-indigo-600/95 hover:bg-indigo-500">
+          Refine
+        </a>
+      {% endif %}
+    </div>
+  {% endfor %}
+
+  {% if not collections %}
+    <div class="col-span-full text-sm text-zinc-400">No collections found. Create subfolders in <code>photos/</code> and add images.</div>
+  {% endif %}
+</div>
+
 {% endblock %}

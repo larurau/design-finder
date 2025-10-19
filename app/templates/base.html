@@ -9,10 +9,11 @@
   <link rel="icon" href="{{ url_for('static', path='favicon.svg') }}" />
 </head>
 <body class="min-h-screen bg-zinc-950 text-zinc-100 antialiased">
+
+  {% block header %}
   <header class="border-b border-zinc-800">
     <div class="max-w-4xl mx-auto px-4 py-4 flex items-center gap-3">
       <h1 class="text-lg font-semibold">Design Tinder</h1>
-
       <details class="ml-auto">
         <summary class="text-sm text-zinc-400 cursor-pointer select-none">Diagnostics</summary>
         <div class="mt-2">
@@ -24,8 +25,13 @@
       </details>
     </div>
   </header>
+  {% endblock %}
+
   <main class="max-w-4xl mx-auto px-4 py-8">
     {% block content %}{% endblock %}
   </main>
+
+  {# ✅ allow pages to inject scripts (e.g., refine.html) #}
+  {% block scripts %}{% endblock %}
 </body>
 </html>
