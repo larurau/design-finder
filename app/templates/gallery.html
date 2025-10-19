@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Design Tinder · Gallery{% endblock %}
+{% block content %}
+  <div class="mb-4 text-zinc-300">
+    Lightweight gallery — no ratings yet. Drop a few images into <code>photos/</code>, then refresh.
+  </div>
+
+  <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+    {% for img in images %}
+      <div class="rounded-xl overflow-hidden border border-zinc-800 bg-zinc-900">
+        <img
+          src="/thumb/{{ img.key }}"
+          alt="{{ img.name }}"
+          class="w-full h-40 object-cover"
+          loading="lazy" />
+        <div class="px-3 py-2 text-xs text-zinc-400 truncate">{{ img.name }}</div>
+      </div>
+    {% endfor %}
+    {% if not images %}
+      <div class="col-span-full text-sm text-zinc-400">No images found in <code>photos/</code>.</div>
+    {% endif %}
+  </div>
+{% endblock %}

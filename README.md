@@ -1,4 +1,4 @@
-# Design Tinder (skeleton)
+# Design Tinder
 
 Minimal FastAPI + Jinja2 + HTMX + Tailwind skeleton.
 

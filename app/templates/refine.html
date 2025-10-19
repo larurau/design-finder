@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}Refining{% endblock %}
+
+{% block header %}{% endblock %}  {# hide base header #}
+
+{% block head %}
+  <style>
+    /* Lock layout to viewport and remove vertical padding from base */
+    main { padding-top: 0; padding-bottom: 0; }
+    .refine-viewport { height: 100vh; overflow: hidden; }
+    .drop-shadow { filter: drop-shadow(0 0 18px rgba(0,0,0,.35)); }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div class="refine-viewport flex flex-col">
+
+    <!-- Image + controls -->
+    <div id="refine-card" class="flex-1">
+      {% include "_refine_item.html" with context %}
+    </div>
+
+    <!-- Bottom-centered Back (fixed height) -->
+    <div class="h-12 flex items-center justify-center">
+      <a href="/" class="px-4 py-2 rounded-md border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-sm">
+        ← Back
+      </a>
+    </div>
+
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  function initSwipeFor(root) {
+    if (!root) return;
+    const card    = root.querySelector('[data-card]');
+    const skipEl  = root.querySelector('[data-skip]');
+    const yesMid  = root.querySelector('[data-yes-mid]');
+    const noMid   = root.querySelector('[data-no-mid]');
+    const imgEl   = card ? card.querySelector('img') : null;
+
+    if (!card || !imgEl) return;
+    if (card.__swipeBound) return;
+    card.__swipeBound = true;
+
+    // Prevent native drag
+    card.addEventListener('dragstart', (e) => e.preventDefault());
+    imgEl.addEventListener('dragstart', (e) => e.preventDefault());
+
+    let startX=0, startY=0, x=0, y=0, active=false;
+    const THRESH_X = 120;   // left/right
+    const THRESH_Y = 120;   // up for skip
+    const ROTATE   = 18;
+
+    function setTransform() {
+      const rot = (x / window.innerWidth) * ROTATE;
+      card.style.transform = `translate(${x}px, ${y}px) rotate(${rot}deg)`;
+
+      // Center icons – fade & scale with horizontal swipe
+      const ax = Math.min(Math.abs(x) / THRESH_X, 1);
+      const scale = 0.9 + 0.2 * ax;
+      if (yesMid) {
+        yesMid.style.opacity   = x > 0 ? ax : 0;
+        yesMid.style.transform = `scale(${scale})`;
+      }
+      if (noMid) {
+        noMid.style.opacity    = x < 0 ? ax : 0;
+        noMid.style.transform  = `scale(${scale})`;
+      }
+
+      // Optional skip hint (upwards)
+      const ay = Math.min(Math.max(-y, 0) / THRESH_Y, 1);
+      if (skipEl) skipEl.style.opacity = ay;
+    }
+
+    function reset() {
+      card.style.transition = 'transform 180ms ease';
+      card.style.transform  = '';
+      [skipEl, yesMid, noMid].forEach(el => { if (el) el.style.opacity = 0; });
+      setTimeout(() => { card.style.transition = ''; }, 200);
+      x = y = 0;
+    }
+
+    const itemId   = root.dataset.itemId;
+    const postUrl  = root.dataset.postUrl;
+    const targetSel= '#refine-card';
+
+    function submit(action) {
+      htmx.ajax('POST', postUrl, {
+        target: targetSel,
+        swap: 'innerHTML',
+        values: { item_id: itemId, action }
+      });
+    }
+
+    function fling(action, toX, toY) {
+      card.style.transition = 'transform 240ms ease-out';
+      card.style.transform  = `translate(${toX}px, ${toY}px) rotate(${(toX/200)*ROTATE}deg)`;
+      setTimeout(() => submit(action), 220);
+    }
+
+    function onPointerDown(e) {
+      if (e.isPrimary === false) return;
+      active = true;
+      startX = e.clientX; startY = e.clientY; x = 0; y = 0;
+      card.setPointerCapture?.(e.pointerId);
+      card.style.willChange = 'transform';
+      card.classList.add('cursor-grabbing');
+    }
+
+    function onPointerMove(e) {
+      if (!active) return;
+      e.preventDefault(); // avoid page scroll
+      x = e.clientX - startX;
+      y = e.clientY - startY;
+      setTransform();
+    }
+
+    function onPointerUp() {
+      if (!active) return;
+      active = false;
+      card.classList.remove('cursor-grabbing');
+
+      if (x > THRESH_X)   return fling('yes',  window.innerWidth,  y*0.5);
+      if (x < -THRESH_X)  return fling('no',  -window.innerWidth,  y*0.5);
+      if (y < -THRESH_Y)  return fling('skip', x*0.5, -window.innerHeight);
+
+      reset();
+    }
+
+    card.addEventListener('pointerdown', onPointerDown, { passive: true });
+    card.addEventListener('pointermove', onPointerMove, { passive: false });
+    card.addEventListener('pointerup', onPointerUp, { passive: true });
+    card.addEventListener('pointercancel', onPointerUp, { passive: true });
+  }
+
+  // Init on first load
+  initSwipeFor(document.getElementById('swipe-root'));
+
+  // Re-init after HTMX swaps the next item fragment into #refine-card
+  document.body.addEventListener('htmx:afterSwap', function (evt) {
+    const target = evt.detail && evt.detail.target;
+    if (target && target.id === 'refine-card') {
+      initSwipeFor(document.getElementById('swipe-root'));
+    }
+  });
+})();
+</script>
+{% endblock %}
