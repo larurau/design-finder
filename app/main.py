@@ -23,16 +23,6 @@ async def healthz():
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
-
-
-@app.get("/api/ping", response_class=PlainTextResponse)
-async def ping():
-    return "pong"
-
-
-@app.get("/collections", response_class=HTMLResponse)
-async def collections(request: Request):
     cols = list_collections()
     cards = []
     for c in cols:
@@ -46,6 +36,11 @@ async def collections(request: Request):
         "request": request,
         "collections": cards
     })
+
+
+@app.get("/api/ping", response_class=PlainTextResponse)
+async def ping():
+    return "pong"
 
 
 @app.get("/collection/{collection}", response_class=HTMLResponse)
