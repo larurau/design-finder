@@ -308,3 +308,39 @@ async def refine_create_from_ref(rid: int = Form(...), name: str = Form(...)):
             [(new_id, r["relpath"]) for r in yes_rows]
         )
     return RedirectResponse(url=f"/refine/{new_id}", status_code=303)
+
+@app.get("/refine/{rid}/progress", response_class=HTMLResponse)
+async def refine_progress(rid: int):
+    with get_db() as db:
+        row = db.execute(
+            """
+            SELECT
+              SUM(CASE WHEN rating IS NULL THEN 1 ELSE 0 END)    AS pending,
+              SUM(CASE WHEN rating='skip' THEN 1 ELSE 0 END)     AS skipped,
+              SUM(CASE WHEN rating='yes' THEN 1 ELSE 0 END)      AS yes,
+              SUM(CASE WHEN rating='no' THEN 1 ELSE 0 END)       AS no,
+              COUNT(*)                                           AS total
+            FROM refinement_items
+            WHERE refinement_id=?
+            """,
+            (rid,),
+        ).fetchone()
+    # “Left” = items not decided yet (pending + skipped)
+    left = (row["pending"] or 0) + (row["skipped"] or 0)
+    decided = (row["yes"] or 0) + (row["no"] or 0)
+
+    # Return a tiny pill that we’ll auto-fade on the client
+    html = f"""
+    <div data-tip
+         class="transition-opacity duration-500
+                bg-zinc-900 text-zinc-100 text-sm  /* bigger text & opaque */
+                px-4 py-3 rounded-lg shadow-lg border border-zinc-700">  <!-- more padding & presence -->
+      <span class="font-semibold">{left}</span> left
+      · <span class="text-emerald-400">{row['yes'] or 0} yes</span>
+      · <span class="text-rose-400">{row['no'] or 0} no</span>
+      · <span class="text-zinc-300">{row['skipped'] or 0} skipped</span>
+      · total {row['total'] or 0}
+    </div>
+    """
+    return HTMLResponse(html)
+

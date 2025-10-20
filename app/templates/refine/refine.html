@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Refining{% endblock %}
 
-{% block header %}{% endblock %}  {# hide base header #}
+{% block header %}{% endblock %}
 
 {% block head %}
   <style>
@@ -18,11 +18,22 @@
       {% include "refine/_refine_item.html" with context %}
     </div>
 
-    <!-- after -->
-    <div class="h-20 flex items-end justify-center pb-4">
-      <a href="/" class="px-4 py-2 rounded-md border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-sm">
-        ← Back
-      </a>
+    <div class="h-20 flex items-end justify-center relative">
+      <div class="mb-2 flex items-center gap-3">
+        <a href="/" class="px-4 py-2 rounded-md border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-sm">
+          ← Back
+        </a>
+        <button
+          class="px-4 py-2 rounded-md border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-sm"
+          hx-get="/refine/{{ ref.id }}/progress"
+          hx-target="#progress-tip"
+          hx-swap="innerHTML">
+          Progress
+        </button>
+      </div>
+
+      <!-- floating tip area -->
+      <div id="progress-tip" class="absolute -top-20"></div>
     </div>
 
   </div>
@@ -43,7 +54,6 @@
     if (card.__swipeBound) return;
     card.__swipeBound = true;
 
-    // block native image dragging
     card.addEventListener('dragstart', (e) => e.preventDefault());
     imgEl.addEventListener('dragstart', (e) => e.preventDefault());
 
@@ -57,21 +67,19 @@
       card.style.transform = `translate(${x}px, ${y}px) rotate(${rot}deg)`;
 
       // Normalize intent strengths (0..1)
-      const sx = Math.min(Math.abs(x) / THRESH_X, 1);                 // horizontal strength
-      const sy = Math.min(Math.max(-y, 0) / THRESH_Y, 1);             // upward strength
+      const sx = Math.min(Math.abs(x) / THRESH_X, 1);
+      const sy = Math.min(Math.max(-y, 0) / THRESH_Y, 1);
 
       const yesScore  = x > 0 ? sx : 0;
       const noScore   = x < 0 ? sx : 0;
       const skipScore = sy;
 
-      // Pick the strongest intent
-      let winner = 'none';
-      let strength = 0;
+      // Pick strongest intent (mutually exclusive overlays)
+      let winner = 'none', strength = 0;
       if (yesScore >= noScore && yesScore >= skipScore) { winner = 'yes';  strength = yesScore; }
       else if (noScore >= yesScore && noScore >= skipScore) { winner = 'no'; strength = noScore; }
       else if (skipScore > 0) { winner = 'skip'; strength = skipScore; }
 
-      // Scale overlays with strength, show only the winner
       const scale = 0.9 + 0.2 * strength;
 
       if (yesMid) {
@@ -87,7 +95,6 @@
         skipMid.style.transform = (winner === 'skip') ? `scale(${scale})` : 'scale(0.9)';
       }
     }
-
 
     function reset() {
       card.style.transition = 'transform 180ms ease';
@@ -158,6 +165,17 @@
     const target = evt.detail && evt.detail.target;
     if (target && target.id === 'refine-card') {
       initSwipeFor(document.getElementById('swipe-root'));
+    }
+  });
+
+  // Auto-fade progress pill
+  document.body.addEventListener('htmx:afterSwap', function (evt) {
+    const target = evt.detail && evt.detail.target;
+    if (target && target.id === 'progress-tip') {
+      const tip = target.querySelector('[data-tip]');
+      if (!tip) return;
+      setTimeout(() => tip.classList.add('opacity-0'), 1500);
+      setTimeout(() => { target.innerHTML = ''; }, 2000);
     }
   });
 })();
