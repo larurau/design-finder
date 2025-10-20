@@ -5,7 +5,6 @@
 
 {% block head %}
   <style>
-    /* Lock layout to viewport and remove vertical padding from base */
     main { padding-top: 0; padding-bottom: 0; }
     .refine-viewport { height: 100vh; overflow: hidden; }
     .drop-shadow { filter: drop-shadow(0 0 18px rgba(0,0,0,.35)); }
@@ -15,13 +14,12 @@
 {% block content %}
   <div class="refine-viewport flex flex-col">
 
-    <!-- Image + controls -->
     <div id="refine-card" class="flex-1">
-      {% include "_refine_item.html" with context %}
+      {% include "refine/_refine_item.html" with context %}
     </div>
 
-    <!-- Bottom-centered Back (fixed height) -->
-    <div class="h-12 flex items-center justify-center">
+    <!-- after -->
+    <div class="h-20 flex items-end justify-center pb-4">
       <a href="/" class="px-4 py-2 rounded-md border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-sm">
         ← Back
       </a>
@@ -36,16 +34,16 @@
   function initSwipeFor(root) {
     if (!root) return;
     const card    = root.querySelector('[data-card]');
-    const skipEl  = root.querySelector('[data-skip]');
     const yesMid  = root.querySelector('[data-yes-mid]');
     const noMid   = root.querySelector('[data-no-mid]');
+    const skipMid = root.querySelector('[data-skip-mid]');
     const imgEl   = card ? card.querySelector('img') : null;
 
     if (!card || !imgEl) return;
     if (card.__swipeBound) return;
     card.__swipeBound = true;
 
-    // Prevent native drag
+    // block native image dragging
     card.addEventListener('dragstart', (e) => e.preventDefault());
     imgEl.addEventListener('dragstart', (e) => e.preventDefault());
 
@@ -58,34 +56,50 @@
       const rot = (x / window.innerWidth) * ROTATE;
       card.style.transform = `translate(${x}px, ${y}px) rotate(${rot}deg)`;
 
-      // Center icons – fade & scale with horizontal swipe
-      const ax = Math.min(Math.abs(x) / THRESH_X, 1);
-      const scale = 0.9 + 0.2 * ax;
+      // Normalize intent strengths (0..1)
+      const sx = Math.min(Math.abs(x) / THRESH_X, 1);                 // horizontal strength
+      const sy = Math.min(Math.max(-y, 0) / THRESH_Y, 1);             // upward strength
+
+      const yesScore  = x > 0 ? sx : 0;
+      const noScore   = x < 0 ? sx : 0;
+      const skipScore = sy;
+
+      // Pick the strongest intent
+      let winner = 'none';
+      let strength = 0;
+      if (yesScore >= noScore && yesScore >= skipScore) { winner = 'yes';  strength = yesScore; }
+      else if (noScore >= yesScore && noScore >= skipScore) { winner = 'no'; strength = noScore; }
+      else if (skipScore > 0) { winner = 'skip'; strength = skipScore; }
+
+      // Scale overlays with strength, show only the winner
+      const scale = 0.9 + 0.2 * strength;
+
       if (yesMid) {
-        yesMid.style.opacity   = x > 0 ? ax : 0;
-        yesMid.style.transform = `scale(${scale})`;
+        yesMid.style.opacity   = (winner === 'yes') ? strength : 0;
+        yesMid.style.transform = (winner === 'yes') ? `scale(${scale})` : 'scale(0.9)';
       }
       if (noMid) {
-        noMid.style.opacity    = x < 0 ? ax : 0;
-        noMid.style.transform  = `scale(${scale})`;
+        noMid.style.opacity    = (winner === 'no') ? strength : 0;
+        noMid.style.transform  = (winner === 'no') ? `scale(${scale})` : 'scale(0.9)';
       }
-
-      // Optional skip hint (upwards)
-      const ay = Math.min(Math.max(-y, 0) / THRESH_Y, 1);
-      if (skipEl) skipEl.style.opacity = ay;
+      if (skipMid) {
+        skipMid.style.opacity   = (winner === 'skip') ? strength : 0;
+        skipMid.style.transform = (winner === 'skip') ? `scale(${scale})` : 'scale(0.9)';
+      }
     }
+
 
     function reset() {
       card.style.transition = 'transform 180ms ease';
       card.style.transform  = '';
-      [skipEl, yesMid, noMid].forEach(el => { if (el) el.style.opacity = 0; });
+      [yesMid, noMid, skipMid].forEach(el => { if (el) el.style.opacity = 0; });
       setTimeout(() => { card.style.transition = ''; }, 200);
       x = y = 0;
     }
 
-    const itemId   = root.dataset.itemId;
-    const postUrl  = root.dataset.postUrl;
-    const targetSel= '#refine-card';
+    const itemId    = root.dataset.itemId;
+    const postUrl   = root.dataset.postUrl;
+    const targetSel = '#refine-card';
 
     function submit(action) {
       htmx.ajax('POST', postUrl, {
@@ -112,7 +126,7 @@
 
     function onPointerMove(e) {
       if (!active) return;
-      e.preventDefault(); // avoid page scroll
+      e.preventDefault();
       x = e.clientX - startX;
       y = e.clientY - startY;
       setTransform();
@@ -139,7 +153,7 @@
   // Init on first load
   initSwipeFor(document.getElementById('swipe-root'));
 
-  // Re-init after HTMX swaps the next item fragment into #refine-card
+  // Re-init after HTMX swaps the fragment into #refine-card
   document.body.addEventListener('htmx:afterSwap', function (evt) {
     const target = evt.detail && evt.detail.target;
     if (target && target.id === 'refine-card') {

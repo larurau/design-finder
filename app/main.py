@@ -147,7 +147,7 @@ async def thumb_in_collection(collection: str, filename: str):
 @app.get("/refine/start/{collection}", response_class=HTMLResponse)
 async def refine_start(request: Request, collection: str):
     suggested = f"{collection}-refine"
-    return templates.TemplateResponse("refine_start.html", {
+    return templates.TemplateResponse("refine/refine_start.html", {
         "request": request, "collection": collection, "suggested": suggested
     })
 
@@ -207,7 +207,7 @@ async def refine_view(request: Request, rid: int):
         root_folder = _root_collection_for_refinement(ref["id"])  # ✅
         url = f"/image/{root_folder}/{item['relpath']}"
         thumb = f"/thumb/{root_folder}/{item['relpath']}"
-        return templates.TemplateResponse("refine.html", {
+        return templates.TemplateResponse("refine/refine.html", {
             "request": request,
             "ref": ref,
             "item": {"id": item["id"], "relpath": item["relpath"], "url": url, "thumb": thumb}
@@ -251,7 +251,7 @@ async def refine_rate(
 
         # ✅ pass the real request + ref so the form action has the right rid
         return templates.TemplateResponse(
-            "_refine_item.html",
+            "refine/_refine_item.html",
             {
                 "request": request,
                 "ref": ref,
@@ -285,7 +285,7 @@ async def refine_start_from_ref(request: Request, rid: int):
         ref = db.execute("SELECT * FROM refinements WHERE id=?", (rid,)).fetchone()
         if not ref: raise HTTPException(404, "Refinement not found")
     suggested = f"{ref['name']}-refine"
-    return templates.TemplateResponse("refine_start_ref.html", {
+    return templates.TemplateResponse("refine/refine_start_ref.html", {
         "request": request, "rid": rid, "suggested": suggested
     })
 

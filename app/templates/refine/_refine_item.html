@@ -17,13 +17,6 @@
           loading="eager"
           draggable="false" />
 
-        <!-- (Removed corner YES/NO labels) -->
-
-        <!-- Keep optional bottom SKIP label -->
-        <div data-skip
-             class="absolute bottom-3 left-1/2 -translate-x-1/2 px-2 py-1 text-xs font-semibold rounded bg-zinc-700/90 pointer-events-none"
-             style="opacity:0">SKIP</div>
-
         <!-- Center icons -->
         <div data-yes-mid
              class="pointer-events-none absolute inset-0 grid place-items-center"
@@ -43,29 +36,18 @@
             <path d="M6 6L18 18M18 6L6 18"/>
           </svg>
         </div>
+        <div data-skip-mid
+             class="pointer-events-none absolute inset-0 grid place-items-center"
+             style="opacity:0; transform:scale(0.9);">
+          <!-- Up arrow for skip -->
+          <svg viewBox="0 0 24 24" class="h-24 w-24 text-zinc-300 drop-shadow"
+               fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 19V5M12 5l-6 6M12 5l6 6"/>
+          </svg>
+        </div>
       </figure>
     </div>
 
-    <!-- Fallback controls -->
-    <form
-      hx-post="/refine/{{ ref.id }}/rate"
-      hx-target="#refine-card"
-      hx-swap="innerHTML"
-      class="h-12 flex items-center justify-center gap-2">
-      <input type="hidden" name="item_id" value="{{ item.id }}">
-      <button name="action" value="no"
-              class="px-4 py-2 rounded-md bg-rose-600 hover:bg-rose-500 text-sm">
-        No
-      </button>
-      <button name="action" value="skip"
-              class="px-4 py-2 rounded-md bg-zinc-800 border border-zinc-700 hover:bg-zinc-700 text-sm">
-        Skip
-      </button>
-      <button name="action" value="yes"
-              class="px-4 py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-sm">
-        Yes
-      </button>
-    </form>
   </div>
 {% else %}
   <div class="h-full grid place-items-center text-zinc-400">No item.</div>
