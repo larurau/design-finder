@@ -309,6 +309,23 @@ async def refine_create_from_ref(rid: int = Form(...), name: str = Form(...)):
         )
     return RedirectResponse(url=f"/refine/{new_id}", status_code=303)
 
+@app.delete("/refine/{rid}")
+async def refine_delete(rid: int):
+    with get_db() as db:
+        ref = db.execute("SELECT status FROM refinements WHERE id=?", (rid,)).fetchone()
+        if not ref:
+            raise HTTPException(404, "Refinement not found")
+        if ref["status"] != "active":
+            # only allow removing in-progress refinements
+            raise HTTPException(409, "Only active refinements can be removed")
+
+        # remove items first (no FK cascade in our schema)
+        db.execute("DELETE FROM refinement_items WHERE refinement_id=?", (rid,))
+        db.execute("DELETE FROM refinements WHERE id=?", (rid,))
+
+    # 204 is perfect for htmx 'outerHTML' swap with empty content
+    return HTMLResponse("", headers={"HX-Redirect": "/"})
+
 @app.get("/refine/{rid}/progress", response_class=HTMLResponse)
 async def refine_progress(rid: int):
     with get_db() as db:
